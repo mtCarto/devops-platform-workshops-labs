@@ -67,11 +67,6 @@ objects:
 
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
-  env: 
-    - name: GF_PATHS_LOGS
-      value: /logs
-    - name: GF_LOG_MODE
-      value: file
   metadata:
     labels:
       app: ${GRAFANA_SERVICE_NAME}
@@ -101,6 +96,20 @@ objects:
           deploymentconfig: ${GRAFANA_SERVICE_NAME}
       spec:
         containers:
+        - name: promtail
+          image: grafana/promtail:latest
+          args:
+            - -config.file=/etc/promtail/promtail.yaml
+          env: 
+            - name: GF_PATHS_LOGS
+              value: /logs
+            - name: GF_LOG_MODE
+              value: file
+          volumeMounts:
+            - name: logs
+              mountPath: /logs
+            - name: promtail-config
+              mountPath: /etc/promtail
         - image: grafana/grafana:v6.2.0
           imagePullPolicy: IfNotPresent
           name: ${GRAFANA_SERVICE_NAME}
@@ -119,16 +128,6 @@ objects:
             name: volume-y3co5
           - mountPath: /logs
             name: logs
-          - name: promtail-container
-        - name: promtail
-          image: grafana/promtail:latest
-          args:
-          - -config.file=/etc/promtail/promtail.yaml
-          volumeMounts:
-          - name: logs
-            mountPath: /logs
-          - name: promtail-config
-            mountPath: /etc/promtail
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
