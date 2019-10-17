@@ -12,10 +12,10 @@ def PROMETHEUS_SERVICE = "prometheus"
 //Pipeline
 node {
     stage ('Deploy Loki to Dev'){
+        checkout scm
         parallel (
             'deploy Loki': {
                 dir ('simple_pipeline') {
-                    checkout scm
                     sh "oc process -f openshift/templates/loki_template.yaml -p  LOKI_SERVICE_NAME=${LOKI_SERVICE} | oc apply -f - -n ${DEV_NAMESPACE}"
                     
                     sh "echo Wait for service to be up"
@@ -32,7 +32,6 @@ node {
             },
             'deploy Prometheus': {
                 dir ('simple_pipeline') {
-                    checkout scm
                     sh "oc process -f openshift/templates/prometheus_template.yaml -p PROMETHEUS_SERVICE_NAME=mtcarto-prometheus -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
                     sh "echo Wait for service to be up"
                     timeout (time: 180, unit: 'SECONDS'){
@@ -48,7 +47,6 @@ node {
             },
             'deploy Grafana': {
                 dir ('simple_pipeline') {
-                    checkout scm
                     sh "oc process -f openshift/templates/grafana_template.yaml -p GRAFANA_SERVICE_NAME=${GRAFANA_SERVICE} -p LOKI_SERVICE_NAME=${LOKI_SERVICE} -p PROMETHEUS_SERVICE_NAME=${PROMETHEUS_SERVICE} -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
                     sh "echo Wait for service to be up"
                     timeout (time: 180, unit: 'SECONDS'){
