@@ -137,6 +137,7 @@ objects:
           checksum/config: 1b39b35c08c66d681d77312a0d32f719bb080208d9e3b55fe0be4146b31ec809
           prometheus.io/port: http-metrics
           prometheus.io/scrape: "true"
+          our-awesome-metadata: "nothing to see here"
         creationTimestamp: null
         labels:
           app: ${LOKI_SERVICE_NAME}
