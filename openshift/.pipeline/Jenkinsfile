@@ -5,46 +5,63 @@ def TOOLS_NAMESPACE = "4zq6uj-mtcarto-ocp201-tst-tools"
 def DEV_NAMESPACE = "4zq6uj-mtcarto-ocp201-tst-dev"
 def PROD_NAMESPACE = "4zq6uj-mtcarto-ocp201-tst-prod"
 def LOKI_SERVICE  = "loki"
+def GRAFANA_SERVICE = "grafana"
+def PROMETHEUS_SERVICE = "prometheus"
 
 
 //Pipeline
 node {
     stage ('Deploy Loki to Dev'){
-        dir ('simple_pipeline') {
-            checkout scm
-            sh "oc process -f openshift/templates/loki_template.yaml -p  LOKI_SERVICE_NAME=${LOKI_SERVICE} | oc apply -f - -n ${DEV_NAMESPACE}"
-            
-            sh "echo Wait for service to be up"
-            timeout (time: 180, unit: 'SECONDS'){
-                openshift.withCluster() {
-                    openshift.withProject("${DEV_NAMESPACE}") {
-                        def dc = openshift.selector('statefulset', "${LOKI_SERVICE}")
-                        // this will wait until the desired replicas are available
-                        dc.rollout().status()
+        parrallel {
+            'deploy Loki': {
+                dir ('simple_pipeline') {
+                    checkout scm
+                    sh "oc process -f openshift/templates/loki_template.yaml -p  LOKI_SERVICE_NAME=${LOKI_SERVICE} | oc apply -f - -n ${DEV_NAMESPACE}"
+                    
+                    sh "echo Wait for service to be up"
+                    timeout (time: 180, unit: 'SECONDS'){
+                        openshift.withCluster() {
+                            openshift.withProject("${DEV_NAMESPACE}") {
+                                def dc = openshift.selector('statefulset', "${LOKI_SERVICE}")
+                                // this will wait until the desired replicas are available
+                                dc.rollout().status()
+                            }
+                        }
+                    }
+                }
+            },
+            'deploy Prometheus': {
+                dir ('simple_pipeline') {
+                    checkout scm
+                    sh "oc process -f openshift/templates/prometheus_template.yaml -p PROMETHEUS_SERVICE_NAME=mtcarto-prometheus -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
+                    sh "echo Wait for service to be up"
+                    timeout (time: 180, unit: 'SECONDS'){
+                        openshift.withCluster() {
+                            openshift.withProject("${DEV_NAMESPACE}") {
+                                def dc = openshift.selector('deployment', "${PROMETHEUS_SERVICE}")
+                                // this will wait until the desired replicas are available
+                                dc.rollout().status()
+                            }
+                        }
+                    }
+                }
+            },
+            'deploy Grafana': {
+                dir ('simple_pipeline') {
+                    checkout scm
+                    sh "oc process -f openshift/templates/grafana_template.yaml -p GRAFANA_SERVICE_NAME=${GRAFANA_SERVICE} -p LOKI_SERVICE_NAME=${LOKI_SERVICE} -p PROMETHEUS_SERVICE_NAME=${PROMETHEUS_SERVICE} -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
+                    sh "echo Wait for service to be up"
+                    timeout (time: 180, unit: 'SECONDS'){
+                        openshift.withCluster() {
+                            openshift.withProject("${DEV_NAMESPACE}") {
+                                def dc = openshift.selector('deployment', "${GRAFANA_SERVICE}")
+                                // this will wait until the desired replicas are available
+                                dc.rollout().status()
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    stage ('Prod Deploy Check') {
-        input 'Want to deploy to Prod?'
-    }
-    stage ('Deploy to Prod') {
-        dir ('simple_pipeline') {
-            checkout scm
-            sh "oc process -f openshift/templates/loki_template.yaml -p  LOKI_SERVICE_NAME=${LOKI_SERVICE} | oc apply -f - -n ${PROD_NAMESPACE}"
-            
-            sh "echo Wait for service to be up"
-            timeout (time: 180, unit: 'SECONDS'){
-                openshift.withCluster() {
-                    openshift.withProject("${PROD_NAMESPACE}") {
-                        def dc = openshift.selector('statefulset', "${LOKI_SERVICE}")
-                        // this will wait until the desired replicas are available
-                        dc.rollout().status()
-                    }
-                }
-            }
-        }
-    }
-
 }
