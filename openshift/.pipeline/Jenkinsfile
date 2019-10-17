@@ -11,7 +11,7 @@ def PROMETHEUS_SERVICE = "prometheus"
 
 //Pipeline
 node {
-    stage ('Deploy Loki to Dev'){
+    stage ('Deploy apps to Dev'){
         dir ('simple_pipeline') {
             checkout scm
         }
@@ -34,7 +34,7 @@ node {
             },
             'deploy Prometheus': {
                 dir ('simple_pipeline') {
-                    sh "oc process -f openshift/templates/prometheus_template.yaml -p PROMETHEUS_SERVICE_NAME=mtcarto-prometheus -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
+                    sh "oc process -f openshift/templates/prometheus_template.yaml -p PROMETHEUS_SERVICE_NAME=${PROMETHEUS_SERVICE} -p ROUTE_SUBDOMAIN=pathfinder.gov.bc.ca -p NAMESPACE=${DEV_NAMESPACE} | oc apply -f - -n ${DEV_NAMESPACE}"
                     sh "echo Wait for service to be up"
                     timeout (time: 180, unit: 'SECONDS'){
                         openshift.withCluster() {
