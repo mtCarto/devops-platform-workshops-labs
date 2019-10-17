@@ -7,11 +7,10 @@ def DEV_NAMESPACE = "4zq6uj-mtcarto-ocp201-tst-dev"
 
 //Pipeline
 node {
-            stage ('Build Stage'){
-                dir ('simple_pipeline') {
-                    checkout scm
-                    sh "echo HELLO WORLD! "
-                    sh "ls -lha openshift201/templates"
-                }
-            }
+    stage ('Build Stage'){
+        dir ('simple_pipeline') {
+            checkout scm
+            sh "oc get projects"
+        }
     }
+}
