@@ -150,6 +150,8 @@ objects:
             defaultMode: 420
             name: ${GRAFANA_SERVICE_NAME}-promtail-config
           name: promtail-config
+        - emptyDir: {}
+          name: logs
     test: false
     triggers:
     - type: ConfigChange
