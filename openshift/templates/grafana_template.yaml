@@ -120,14 +120,14 @@ objects:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-          - mountPath: /etc/grafana/provisioning/dashboards/
-            name: volume-bfku7
-          - mountPath: /etc/grafana/provisioning/datasources/
-            name: volume-ttg2w
-          - mountPath: /var/lib/grafana/dashboards/
-            name: volume-y3co5
-          - mountPath: /logs
-            name: logs
+            - mountPath: /etc/grafana/provisioning/dashboards/
+              name: volume-bfku7
+            - mountPath: /etc/grafana/provisioning/datasources/
+              name: volume-ttg2w
+            - mountPath: /var/lib/grafana/dashboards/
+              name: volume-y3co5
+            - mountPath: /logs
+              name: logs
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
